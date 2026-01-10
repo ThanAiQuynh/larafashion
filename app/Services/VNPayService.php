@@ -27,11 +27,15 @@ class VNPayService
         $vnp_TxnRef = $order->order_code;
         $vnp_OrderInfo = 'Thanh toan don hang ' . $order->order_code;
         $vnp_OrderType = 'other';
-        $vnp_Amount = $order->total_amount * 100; // VNPay requires amount in smallest unit
+        $vnp_Amount = intval($order->total_amount) * 100; // VNPay requires amount in smallest unit
         $vnp_Locale = 'vn';
         $vnp_IpAddr = $ipAddress;
-        $vnp_CreateDate = date('YmdHis');
-        $vnp_ExpireDate = date('YmdHis', strtotime('+15 minutes'));
+        
+        // Use Vietnam timezone
+        $timezone = new \DateTimeZone('Asia/Ho_Chi_Minh');
+        $now = new \DateTime('now', $timezone);
+        $vnp_CreateDate = $now->format('YmdHis');
+        $vnp_ExpireDate = $now->modify('+30 minutes')->format('YmdHis');
 
         $inputData = [
             "vnp_Version" => "2.1.0",

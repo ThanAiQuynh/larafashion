@@ -194,7 +194,7 @@
                         }
                         
                         // Optional: Show a toast or notification
-                        alert(data.message);
+                        showToast(data.message, 'success');
                     }
                 });
             });

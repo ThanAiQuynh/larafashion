@@ -311,7 +311,7 @@
                         badge.textContent = data.cart_count;
                         badge.style.display = 'block';
                     }
-                    alert(data.message);
+                    showToast(data.message, 'success');
                 }
             });
         });
