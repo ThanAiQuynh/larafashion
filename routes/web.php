@@ -48,7 +48,7 @@ Route::post('/san-pham/{product}/danh-gia', [ReviewController::class, 'store'])-
 Route::delete('/danh-gia/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
 // Cart
-Route::prefix('cart')->name('cart.')->group(function () {
+Route::prefix('gio-hang')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/add', [CartController::class, 'add'])->name('add');
     Route::post('/update', [CartController::class, 'update'])->name('update');
@@ -57,10 +57,11 @@ Route::prefix('cart')->name('cart.')->group(function () {
 });
 
 // Checkout
-Route::prefix('checkout')->name('checkout.')->group(function () {
+Route::prefix('thanh-toan')->name('checkout.')->group(function () {
     Route::get('/', [CheckoutController::class, 'index'])->name('index');
     Route::post('/process', [CheckoutController::class, 'process'])->name('process');
     Route::get('/success/{id}', [CheckoutController::class, 'success'])->name('success');
+    Route::get('/vnpay-return', [CheckoutController::class, 'vnpayReturn'])->name('vnpay.return');
 });
 
 // Customer Authentication
@@ -69,6 +70,12 @@ Route::middleware('guest')->group(function () {
     Route::post('/dang-nhap', [App\Http\Controllers\Auth\CustomerAuthController::class, 'login']);
     Route::get('/dang-ky', [App\Http\Controllers\Auth\CustomerAuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/dang-ky', [App\Http\Controllers\Auth\CustomerAuthController::class, 'register']);
+    
+    // Forgot Password
+    Route::get('/quen-mat-khau', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
+    Route::post('/quen-mat-khau', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/dat-lai-mat-khau/{token}', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/dat-lai-mat-khau', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {

@@ -51,12 +51,12 @@ class DashboardController extends Controller
             ->toArray();
 
         // Top 5 selling products
-        $topProducts = Product::select('products.*')
+        $topProducts = Product::select('products.id', 'products.name', 'products.thumbnail_url')
             ->selectRaw('SUM(order_items.quantity) as total_sold')
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('orders.status', 'completed')
-            ->groupBy('products.id')
+            ->groupBy('products.id', 'products.name', 'products.thumbnail_url')
             ->orderByDesc('total_sold')
             ->limit(5)
             ->get();

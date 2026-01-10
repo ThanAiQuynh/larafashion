@@ -37,7 +37,7 @@
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center">
                                 <label class="form-label fw-medium">Mật khẩu</label>
-                                <a href="#" class="text-decoration-none small">Quên mật khẩu?</a>
+                                <a href="{{ route('password.request') }}" class="text-decoration-none small">Quên mật khẩu?</a>
                             </div>
                             <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" 
                                    placeholder="••••••••">

@@ -21,6 +21,8 @@ class Order extends Model
         'payment_status',
         'shipping_address',
         'note',
+        'vnpay_transaction_id',
+        'notes',
     ];
 
     protected function casts(): array

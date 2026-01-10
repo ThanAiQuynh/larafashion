@@ -47,7 +47,7 @@
                     <div class="form-check card border shadow-sm p-3">
                         <input class="form-check-input ms-0 me-3" type="radio" name="payment_method" id="cod" value="cod" checked>
                         <label class="form-check-label d-flex align-items-center" for="cod">
-                            <i class="bi bi-cash-stack fs-4 text-primary me-3"></i>
+                            <i class="bi bi-cash-stack fs-4 text-success me-3"></i>
                             <div>
                                 <span class="fw-bold d-block">Thanh toán khi nhận hàng (COD)</span>
                                 <small class="text-muted">Thanh toán bằng tiền mặt khi giao hàng tận nơi</small>
@@ -55,12 +55,13 @@
                         </label>
                     </div>
                     <div class="form-check card border shadow-sm p-3">
-                        <input class="form-check-input ms-0 me-3" type="radio" name="payment_method" id="bank" value="bank_transfer">
-                        <label class="form-check-label d-flex align-items-center" for="bank">
-                            <i class="bi bi-bank fs-4 text-primary me-3"></i>
+                        <input class="form-check-input ms-0 me-3" type="radio" name="payment_method" id="vnpay" value="vnpay">
+                        <label class="form-check-label d-flex align-items-center" for="vnpay">
+                            <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/6/0oxhzjmxbksr1686814746087.png" 
+                                 alt="VNPay" style="height: 32px;" class="me-3">
                             <div>
-                                <span class="fw-bold d-block">Chuyển khoản ngân hàng</span>
-                                <small class="text-muted">Thông tin tài khoản sẽ hiển thị sau khi đặt hàng</small>
+                                <span class="fw-bold d-block">Thanh toán qua VNPay</span>
+                                <small class="text-muted">ATM, Visa/Master, Ví điện tử, QR Code</small>
                             </div>
                         </label>
                     </div>

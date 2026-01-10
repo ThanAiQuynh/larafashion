@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Services\VNPayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 
 class CheckoutController extends Controller
 {
@@ -32,14 +32,14 @@ class CheckoutController extends Controller
     /**
      * Process checkout
      */
-    public function process(Request $request)
+    public function process(Request $request, VNPayService $vnpay)
     {
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'required|string|max:20',
             'shipping_address' => 'required|string',
-            'payment_method' => 'required|in:cod,bank_transfer',
+            'payment_method' => 'required|in:cod,vnpay',
         ], [
             'customer_name.required' => 'Vui lòng nhập họ tên.',
             'customer_email.required' => 'Vui lòng nhập email.',
@@ -64,7 +64,7 @@ class CheckoutController extends Controller
             // Create Order
             $order = Order::create([
                 'order_code' => Order::generateOrderCode(),
-                'user_id' => auth()->id(), // null for guests
+                'user_id' => auth()->id(),
                 'customer_name' => $request->customer_name,
                 'customer_email' => $request->customer_email,
                 'customer_phone' => $request->customer_phone,
@@ -72,7 +72,7 @@ class CheckoutController extends Controller
                 'shipping_address' => [
                     'address' => $request->shipping_address,
                 ],
-                'payment_method' => $request->payment_method === 'bank_transfer' ? 'banking' : 'cod',
+                'payment_method' => $request->payment_method === 'vnpay' ? 'vnpay' : 'cod',
                 'status' => 'pending',
                 'payment_status' => 'pending',
             ]);
@@ -88,7 +88,7 @@ class CheckoutController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
-                    'product_name' => $product->name, // Snapshot
+                    'product_name' => $product->name,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
                     'total_price' => $item['price'] * $item['quantity'],
@@ -102,11 +102,57 @@ class CheckoutController extends Controller
             // Clear Cart
             session()->forget('cart');
 
+            // If VNPay, redirect to payment
+            if ($request->payment_method === 'vnpay') {
+                $paymentUrl = $vnpay->createPaymentUrl($order, $request->ip());
+                return redirect()->away($paymentUrl);
+            }
+
             return redirect()->route('checkout.success', $order->id)->with('success', 'Đặt hàng thành công!');
 
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Handle VNPay return
+     */
+    public function vnpayReturn(Request $request, VNPayService $vnpay)
+    {
+        // Validate signature
+        if (!$vnpay->validateReturn($request)) {
+            return redirect()->route('home')->with('error', 'Xác thực thanh toán thất bại.');
+        }
+
+        $orderCode = $vnpay->getTransactionRef($request);
+        $order = Order::where('order_code', $orderCode)->first();
+
+        if (!$order) {
+            return redirect()->route('home')->with('error', 'Không tìm thấy đơn hàng.');
+        }
+
+        if ($vnpay->isPaymentSuccess($request)) {
+            // Payment successful
+            $order->update([
+                'payment_status' => 'paid',
+                'vnpay_transaction_id' => $request->input('vnp_TransactionNo'),
+            ]);
+            return redirect()->route('checkout.success', $order->id)
+                ->with('success', 'Thanh toán thành công!');
+        } else {
+            // Payment failed
+            $responseCode = $request->input('vnp_ResponseCode');
+            $message = $vnpay->getResponseMessage($responseCode);
+            
+            $order->update([
+                'payment_status' => 'failed',
+                'notes' => 'VNPay Error: ' . $message,
+            ]);
+            
+            return redirect()->route('checkout.success', $order->id)
+                ->with('error', 'Thanh toán thất bại: ' . $message);
         }
     }
 
