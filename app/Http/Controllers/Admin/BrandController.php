@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use App\Services\CloudinaryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -32,7 +32,7 @@ class BrandController extends Controller
     /**
      * Store new brand
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, CloudinaryService $cloudinary): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:brands,name',
@@ -43,10 +43,11 @@ class BrandController extends Controller
 
         // Handle logo upload
         if ($request->hasFile('logo')) {
-            $uploadedFile = Cloudinary::upload($request->file('logo')->getRealPath(), [
-                'folder' => 'larafashion/brands',
-            ]);
-            $validated['logo_url'] = $uploadedFile->getSecurePath();
+            try {
+                $validated['logo_url'] = $cloudinary->uploadImage($request->file('logo'), 'brands');
+            } catch (\Exception $e) {
+                return back()->withInput()->with('error', 'Không thể upload logo: ' . $e->getMessage());
+            }
         }
 
         unset($validated['logo']);
@@ -67,7 +68,7 @@ class BrandController extends Controller
     /**
      * Update brand
      */
-    public function update(Request $request, Brand $brand): RedirectResponse
+    public function update(Request $request, Brand $brand, CloudinaryService $cloudinary): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:brands,name,' . $brand->id,
@@ -78,10 +79,15 @@ class BrandController extends Controller
 
         // Handle logo upload
         if ($request->hasFile('logo')) {
-            $uploadedFile = Cloudinary::upload($request->file('logo')->getRealPath(), [
-                'folder' => 'larafashion/brands',
-            ]);
-            $validated['logo_url'] = $uploadedFile->getSecurePath();
+            try {
+                // Delete old logo if it exists
+                if ($brand->logo_url && str_contains($brand->logo_url, 'cloudinary')) {
+                    $cloudinary->deleteImage($brand->logo_url);
+                }
+                $validated['logo_url'] = $cloudinary->uploadImage($request->file('logo'), 'brands');
+            } catch (\Exception $e) {
+                return back()->withInput()->with('error', 'Không thể upload logo: ' . $e->getMessage());
+            }
         }
 
         unset($validated['logo']);
@@ -94,10 +100,15 @@ class BrandController extends Controller
     /**
      * Delete brand
      */
-    public function destroy(Brand $brand): RedirectResponse
+    public function destroy(Brand $brand, CloudinaryService $cloudinary): RedirectResponse
     {
         if ($brand->products()->count() > 0) {
             return back()->with('error', 'Không thể xóa thương hiệu này vì nó có sản phẩm liên kết.');
+        }
+
+        // Delete logo from Cloudinary
+        if ($brand->logo_url && str_contains($brand->logo_url, 'cloudinary')) {
+            $cloudinary->deleteImage($brand->logo_url);
         }
 
         $brand->delete();
@@ -106,4 +117,5 @@ class BrandController extends Controller
             ->with('success', 'Đã xóa thương hiệu thành công!');
     }
 }
+
 

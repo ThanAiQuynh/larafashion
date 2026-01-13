@@ -26,7 +26,15 @@ class CheckoutController extends Controller
             $total += $item['price'] * $item['quantity'];
         }
 
-        return view('checkout.index', compact('cart', 'total'));
+        // Get user addresses
+        $addresses = [];
+        $defaultAddress = null;
+        if (auth()->check()) {
+            $addresses = auth()->user()->addresses()->orderBy('is_default', 'desc')->get();
+            $defaultAddress = $addresses->where('is_default', true)->first();
+        }
+
+        return view('checkout.index', compact('cart', 'total', 'addresses', 'defaultAddress'));
     }
 
     /**

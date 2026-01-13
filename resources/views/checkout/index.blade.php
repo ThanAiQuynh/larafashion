@@ -16,10 +16,44 @@
 
             <form action="{{ route('checkout.process') }}" method="POST" id="checkout-form">
                 @csrf
-                <div class="row g-3">
+                
+                @auth
+                    @if($addresses->count() > 0)
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">Chọn địa chỉ đã lưu</label>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                @foreach($addresses as $address)
+                                    <div class="form-check">
+                                        <input type="radio" class="btn-check" name="saved_address" 
+                                               id="address_{{ $address->id }}" value="{{ $address->id }}"
+                                               {{ $address->is_default ? 'checked' : '' }}
+                                               data-name="{{ $address->recipient_name }}"
+                                               data-phone="{{ $address->recipient_phone }}"
+                                               data-address="{{ $address->full_address }}">
+                                        <label class="btn btn-outline-primary btn-sm" for="address_{{ $address->id }}">
+                                            @if($address->is_default)
+                                                <i class="bi bi-star-fill me-1"></i>
+                                            @endif
+                                            {{ $address->recipient_name }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                                <div class="form-check">
+                                    <input type="radio" class="btn-check" name="saved_address" id="address_new" value="new">
+                                    <label class="btn btn-outline-secondary btn-sm" for="address_new">
+                                        <i class="bi bi-plus-lg me-1"></i>Nhập địa chỉ mới
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endauth
+
+                <div class="row g-3" id="address-fields">
                     <div class="col-12">
                         <label class="form-label fw-medium">Họ và tên</label>
-                        <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name', auth()->user()?->name) }}" placeholder="Nhập họ tên người nhận">
+                        <input type="text" name="customer_name" id="customer_name" class="form-control @error('customer_name') is-invalid @enderror" 
+                               value="{{ old('customer_name', $defaultAddress?->recipient_name ?? auth()->user()?->name) }}" placeholder="Nhập họ tên người nhận">
                         @error('customer_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
@@ -31,13 +65,14 @@
 
                     <div class="col-md-6">
                         <label class="form-label fw-medium">Số điện thoại</label>
-                        <input type="text" name="customer_phone" class="form-control @error('customer_phone') is-invalid @enderror" value="{{ old('customer_phone', auth()->user()?->phone_number) }}" placeholder="09xxxxxxxx">
+                        <input type="text" name="customer_phone" id="customer_phone" class="form-control @error('customer_phone') is-invalid @enderror" 
+                               value="{{ old('customer_phone', $defaultAddress?->recipient_phone ?? auth()->user()?->phone_number) }}" placeholder="09xxxxxxxx">
                         @error('customer_phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-12">
                         <label class="form-label fw-medium">Địa chỉ giao hàng</label>
-                        <textarea name="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố">{{ old('shipping_address') }}</textarea>
+                        <textarea name="shipping_address" id="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố">{{ old('shipping_address', $defaultAddress?->full_address) }}</textarea>
                         @error('shipping_address') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
@@ -117,3 +152,31 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addressRadios = document.querySelectorAll('input[name="saved_address"]');
+    const nameInput = document.getElementById('customer_name');
+    const phoneInput = document.getElementById('customer_phone');
+    const addressInput = document.getElementById('shipping_address');
+    
+    addressRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'new') {
+                // Clear fields for new address
+                nameInput.value = '';
+                phoneInput.value = '';
+                addressInput.value = '';
+                nameInput.focus();
+            } else {
+                // Auto-fill from selected address
+                nameInput.value = this.dataset.name || '';
+                phoneInput.value = this.dataset.phone || '';
+                addressInput.value = this.dataset.address || '';
+            }
+        });
+    });
+});
+</script>
+@endpush
