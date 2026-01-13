@@ -90,6 +90,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/thong-tin', [App\Http\Controllers\AccountController::class, 'updateProfile'])->name('profile.update');
         Route::get('/mat-khau', [App\Http\Controllers\AccountController::class, 'password'])->name('password');
         Route::put('/mat-khau', [App\Http\Controllers\AccountController::class, 'updatePassword'])->name('password.update');
+
+        // Address Management
+        Route::resource('dia-chi', App\Http\Controllers\UserAddressController::class)
+            ->parameters(['dia-chi' => 'address'])
+            ->names('addresses');
+        Route::post('/dia-chi/{address}/mac-dinh', [App\Http\Controllers\UserAddressController::class, 'setDefault'])->name('addresses.default');
     });
 });
 

@@ -160,7 +160,7 @@ function copyWebhookUrl() {
     const input = document.getElementById('webhook-url');
     input.select();
     document.execCommand('copy');
-    alert('Đã copy Webhook URL!');
+    showToast('Đã copy Webhook URL!', 'success');
 }
 </script>
 @endpush

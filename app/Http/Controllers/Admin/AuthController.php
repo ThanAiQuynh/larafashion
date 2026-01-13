@@ -28,12 +28,12 @@ class AuthController extends Controller
             'password' => 'required|min:6',
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $user = Auth::user();
+        if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::guard('admin')->user();
             
             // Check if user is admin
             if ($user->role !== 'admin') {
-                Auth::logout();
+                Auth::guard('admin')->logout();
                 return back()->withErrors([
                     'email' => 'Bạn không có quyền truy cập trang quản trị.',
                 ])->onlyInput('email');
@@ -41,7 +41,7 @@ class AuthController extends Controller
 
             // Check if user is active
             if (!$user->is_active) {
-                Auth::logout();
+                Auth::guard('admin')->logout();
                 return back()->withErrors([
                     'email' => 'Tài khoản của bạn đã bị vô hiệu hóa.',
                 ])->onlyInput('email');
@@ -62,7 +62,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request): RedirectResponse
     {
-        Auth::logout();
+        Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

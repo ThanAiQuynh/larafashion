@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -35,10 +36,20 @@ class BrandController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:brands,name',
+            'logo' => 'nullable|image|mimes:jpeg,png,gif,webp|max:2048',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
 
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $uploadedFile = Cloudinary::upload($request->file('logo')->getRealPath(), [
+                'folder' => 'larafashion/brands',
+            ]);
+            $validated['logo_url'] = $uploadedFile->getSecurePath();
+        }
+
+        unset($validated['logo']);
         Brand::create($validated);
 
         return redirect()->route('admin.brands.index')
@@ -60,10 +71,20 @@ class BrandController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:brands,name,' . $brand->id,
+            'logo' => 'nullable|image|mimes:jpeg,png,gif,webp|max:2048',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
 
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $uploadedFile = Cloudinary::upload($request->file('logo')->getRealPath(), [
+                'folder' => 'larafashion/brands',
+            ]);
+            $validated['logo_url'] = $uploadedFile->getSecurePath();
+        }
+
+        unset($validated['logo']);
         $brand->update($validated);
 
         return redirect()->route('admin.brands.index')
@@ -85,3 +106,4 @@ class BrandController extends Controller
             ->with('success', 'Đã xóa thương hiệu thành công!');
     }
 }
+

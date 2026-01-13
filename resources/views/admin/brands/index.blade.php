@@ -14,7 +14,8 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">Tên thương hiệu</th>
+                        <th class="ps-4">Logo</th>
+                        <th>Tên thương hiệu</th>
                         <th>Slug</th>
                         <th>Số sản phẩm</th>
                         <th class="text-end pe-4">Thao tác</th>
@@ -23,7 +24,14 @@
                 <tbody>
                     @forelse($brands as $brand)
                     <tr>
-                        <td class="ps-4"><strong>{{ $brand->name }}</strong></td>
+                        <td class="ps-4">
+                            @if($brand->logo_url)
+                                <img src="{{ $brand->logo_url }}" alt="{{ $brand->name }}" class="rounded" style="width: 40px; height: 40px; object-fit: contain;">
+                            @else
+                                <span class="badge bg-light text-muted">N/A</span>
+                            @endif
+                        </td>
+                        <td><strong>{{ $brand->name }}</strong></td>
                         <td><code>{{ $brand->slug }}</code></td>
                         <td>{{ $brand->products_count }}</td>
                         <td class="text-end pe-4">

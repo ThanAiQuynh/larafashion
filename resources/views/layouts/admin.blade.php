@@ -268,7 +268,7 @@
             <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
             
             <div class="d-flex align-items-center gap-3">
-                <span class="text-muted">{{ Auth::user()->name ?? 'Admin' }}</span>
+                <span class="text-muted">{{ auth('admin')->user()->name ?? 'Admin' }}</span>
             </div>
         </nav>
         
@@ -297,6 +297,46 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    
+    <!-- Toast Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="adminToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="toast-icon bi"></i>
+                    <span class="toast-message"></span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    function showToast(message, type = 'success') {
+        const toastEl = document.getElementById('adminToast');
+        const toastIcon = toastEl.querySelector('.toast-icon');
+        const toastMessage = toastEl.querySelector('.toast-message');
+        
+        toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info', 'text-white');
+        toastIcon.classList.remove('bi-check-circle-fill', 'bi-x-circle-fill', 'bi-exclamation-triangle-fill', 'bi-info-circle-fill');
+        
+        const config = {
+            success: { bg: 'bg-success', icon: 'bi-check-circle-fill' },
+            error: { bg: 'bg-danger', icon: 'bi-x-circle-fill' },
+            warning: { bg: 'bg-warning', icon: 'bi-exclamation-triangle-fill' },
+            info: { bg: 'bg-info', icon: 'bi-info-circle-fill' }
+        };
+        
+        const { bg, icon } = config[type] || config.success;
+        toastEl.classList.add(bg, 'text-white');
+        toastIcon.classList.add(icon);
+        toastMessage.textContent = message;
+        
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    }
+    </script>
     
     @stack('scripts')
 </body>

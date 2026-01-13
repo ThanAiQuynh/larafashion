@@ -15,21 +15,21 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check()) {
+        if (!Auth::guard('admin')->check()) {
             return redirect()->route('admin.login')
                 ->with('error', 'Vui lòng đăng nhập để tiếp tục.');
         }
 
-        $user = Auth::user();
+        $user = Auth::guard('admin')->user();
 
         if ($user->role !== 'admin') {
-            Auth::logout();
+            Auth::guard('admin')->logout();
             return redirect()->route('admin.login')
                 ->with('error', 'Bạn không có quyền truy cập.');
         }
 
         if (!$user->is_active) {
-            Auth::logout();
+            Auth::guard('admin')->logout();
             return redirect()->route('admin.login')
                 ->with('error', 'Tài khoản đã bị vô hiệu hóa.');
         }

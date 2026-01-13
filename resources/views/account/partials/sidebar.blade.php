@@ -14,6 +14,9 @@
             <a class="nav-link px-3 py-2 rounded {{ request()->routeIs('account.orders*') ? 'bg-primary text-white' : 'text-dark' }}" href="{{ route('account.orders') }}">
                 <i class="bi bi-bag me-2"></i> Đơn hàng
             </a>
+            <a class="nav-link px-3 py-2 rounded {{ request()->routeIs('account.addresses*') ? 'bg-primary text-white' : 'text-dark' }}" href="{{ route('account.addresses.index') }}">
+                <i class="bi bi-geo-alt me-2"></i> Sổ địa chỉ
+            </a>
             <a class="nav-link px-3 py-2 rounded {{ request()->routeIs('account.profile') ? 'bg-primary text-white' : 'text-dark' }}" href="{{ route('account.profile') }}">
                 <i class="bi bi-person me-2"></i> Thông tin
             </a>
