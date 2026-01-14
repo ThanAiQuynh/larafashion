@@ -69,10 +69,7 @@ class Product extends Model
 
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function ($q) use ($keyword) {
-            $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('description', 'like', "%{$keyword}%");
-        });
+        return $query->where('name', 'like', "%{$keyword}%");
     }
 
     public function scopeInStock($query)
