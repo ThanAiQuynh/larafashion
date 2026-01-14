@@ -292,7 +292,7 @@
                 <div class="col-lg-4 col-md-4 mb-4">
                     <h5>Liên hệ</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>123 Nguyễn Huệ, Q.1, TP.HCM</li>
+                        <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>112 Ngõ 28/76 Đường Xuân La, Tây Hồ, Hà Nội.</li>
                         <li class="mb-2"><i class="bi bi-telephone me-2"></i>1900 1234</li>
                         <li class="mb-2"><i class="bi bi-envelope me-2"></i>support@larafashion.vn</li>
                     </ul>
