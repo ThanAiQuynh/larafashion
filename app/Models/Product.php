@@ -69,10 +69,10 @@ class Product extends Model
 
     public function scopeSearch($query, string $keyword)
     {
-        return $query->whereRaw(
-            "MATCH(name, description) AGAINST(? IN NATURAL LANGUAGE MODE)",
-            [$keyword]
-        );
+        return $query->where(function ($q) use ($keyword) {
+            $q->where('name', 'like', "%{$keyword}%")
+              ->orWhere('description', 'like', "%{$keyword}%");
+        });
     }
 
     public function scopeInStock($query)

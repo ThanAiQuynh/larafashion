@@ -25,7 +25,7 @@
                             <div class="mt-2">
                                 <span class="fw-medium text-muted small text-uppercase">{{ $category->name }}</span>
                                 @foreach($category->children as $child)
-                                    <a href="{{ route('products.index', ['category' => $child->slug] + request()->except('category', 'page')) }}" 
+                                    <a href="{{ route('products.index', ['category' => $child->slug]) }}" 
                                        class="list-group-item list-group-item-action border-0 px-0 ps-3 {{ request('category') == $child->slug ? 'text-primary fw-bold' : '' }}">
                                         {{ $child->name }}
                                     </a>
@@ -41,7 +41,7 @@
                     <h5 class="fw-bold mb-3">Thương hiệu</h5>
                     <div class="d-flex flex-wrap gap-2">
                         @foreach($brands as $brand)
-                            <a href="{{ route('products.index', ['brand' => $brand->slug] + request()->except('brand', 'page')) }}" 
+                            <a href="{{ route('products.index', ['brand' => $brand->slug]) }}" 
                                class="btn btn-sm {{ request('brand') == $brand->slug ? 'btn-primary' : 'btn-outline-secondary' }}">
                                 {{ $brand->name }}
                             </a>
