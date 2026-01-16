@@ -218,7 +218,8 @@
                                     <div class="card product-card h-100 border-0 shadow-sm">
                                         <div class="position-relative">
                                             @if($product->getDiscountPercentage())
-                                                <span class="badge bg-danger position-absolute top-0 start-0 m-2 px-2 py-1" style="z-index: 2;">
+                                                <span class="badge bg-danger position-absolute top-0 start-0 m-2 px-2 py-1"
+                                                    style="z-index: 2;">
                                                     -{{ $product->getDiscountPercentage() }}%
                                                 </span>
                                             @endif
@@ -230,12 +231,14 @@
                                         <div class="card-body">
                                             <p class="text-muted small mb-1">{{ $product->brand?->name }}</p>
                                             <h6 class="card-title mb-2">
-                                                <a href="{{ route('products.show', $product->slug) }}" class="text-dark text-decoration-none">
+                                                <a href="{{ route('products.show', $product->slug) }}"
+                                                    class="text-dark text-decoration-none">
                                                     {{ Str::limit($product->name, 40) }}
                                                 </a>
                                             </h6>
                                             <div class="d-flex align-items-center gap-2 mb-3">
-                                                <span class="product-price text-danger fw-bold">{{ number_format($product->price, 0, ',', '.') }}đ</span>
+                                                <span
+                                                    class="product-price text-danger fw-bold">{{ number_format($product->price, 0, ',', '.') }}đ</span>
                                                 <span class="product-price-old text-muted text-decoration-line-through small">
                                                     {{ number_format($product->original_price, 0, ',', '.') }}đ
                                                 </span>
@@ -269,12 +272,14 @@
                                     <div class="card-body">
                                         <p class="text-muted small mb-1">{{ $product->brand?->name }}</p>
                                         <h6 class="card-title mb-2">
-                                            <a href="{{ route('products.show', $product->slug) }}" class="text-dark text-decoration-none">
+                                            <a href="{{ route('products.show', $product->slug) }}"
+                                                class="text-dark text-decoration-none">
                                                 {{ Str::limit($product->name, 40) }}
                                             </a>
                                         </h6>
                                         <div class="d-flex align-items-center gap-2 mb-3">
-                                            <span class="product-price text-danger fw-bold">{{ number_format($product->price, 0, ',', '.') }}đ</span>
+                                            <span
+                                                class="product-price text-danger fw-bold">{{ number_format($product->price, 0, ',', '.') }}đ</span>
                                             <span class="product-price-old text-muted text-decoration-line-through small">
                                                 {{ number_format($product->original_price, 0, ',', '.') }}đ
                                             </span>
@@ -334,6 +339,14 @@
                     </div>
                 @endforelse
             </div>
+
+            @if(isset($totalProductCount) && $totalProductCount > 12)
+                <div class="text-center mt-4">
+                    <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-lg px-5 rounded-pill">
+                        Xem tất cả sản phẩm <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            @endif
         </div>
     </section>
 

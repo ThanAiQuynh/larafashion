@@ -64,7 +64,7 @@ class ProductStoreController extends Controller
         $products = $query->paginate(12)->withQueryString();
         $categories = Category::whereNull('parent_id')->with('children')->get();
         $brands = Brand::all();
-        $maxPrice = Product::active()->max('price') ?? 5000000;
+        $maxPrice = 3000000;
 
         return view('products.index', compact('products', 'categories', 'brands', 'maxPrice'));
     }

@@ -50,7 +50,9 @@ Route::get('/', function () {
         ->orderBy('name')
         ->get();
 
-    return view('home', compact('featuredProducts', 'products', 'saleProducts', 'categories'));
+    $totalProductCount = Product::active()->inStock()->count();
+
+    return view('home', compact('featuredProducts', 'products', 'saleProducts', 'categories', 'totalProductCount'));
 })->name('home');
 
 // Products
@@ -68,7 +70,7 @@ Route::get('/khuyen-mai', function () {
 
     $categories = \App\Models\Category::whereNull('parent_id')->with('children')->get();
     $brands = \App\Models\Brand::all();
-    $maxPrice = \App\Models\Product::active()->max('price') ?? 5000000;
+    $maxPrice = 3000000;
 
     return view('products.index', [
         'products' => $products,
@@ -222,6 +224,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Vouchers Management
         Route::resource('vouchers', \App\Http\Controllers\Admin\VoucherController::class)->except(['create', 'edit']);
+
+        // AI Assistant
+        Route::prefix('ai-assistant')->name('ai-assistant.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminAIController::class, 'index'])->name('index');
+            Route::post('/ask', [\App\Http\Controllers\Admin\AdminAIController::class, 'ask'])->name('ask');
+        });
     });
 });
 

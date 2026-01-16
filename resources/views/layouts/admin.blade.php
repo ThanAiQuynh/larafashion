@@ -294,6 +294,13 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('admin.ai-assistant.index') }}"
+                    class="nav-link {{ request()->routeIs('admin.ai-assistant.*') ? 'active' : '' }}">
+                    <i class="bi bi-robot"></i>
+                    Trợ lý AI
+                </a>
+            </li>
+            <li>
                 <form action="{{ route('admin.logout') }}" method="POST" class="d-inline w-100">
                     @csrf
                     <button type="submit" class="nav-link text-danger bg-transparent border-0 w-100 text-start">

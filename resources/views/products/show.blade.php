@@ -49,7 +49,8 @@
 
                     <div class="d-flex align-items-center gap-3 mb-4" id="price-section">
                         <h2 class="text-primary fw-bold mb-0 display-6" id="current-price">
-                            {{ number_format($product->price, 0, ',', '.') }}đ</h2>
+                            {{ number_format($product->price, 0, ',', '.') }}đ
+                        </h2>
                         @if($product->original_price)
                             <span class="text-muted text-decoration-line-through fs-5"
                                 id="original-price">{{ number_format($product->original_price, 0, ',', '.') }}đ</span>
@@ -58,7 +59,7 @@
                         @endif
                     </div>
 
-                    <div class="mb-4 text-muted border-bottom pb-4">
+                    <div class="mb-4 text-muted border-bottom pb-4" style="white-space: pre-line;">
                         {{ $product->description }}
                     </div>
 
@@ -468,10 +469,10 @@
                     const originalPrice = {{ $product->original_price ?? 0 }};
                     const adjustment = parseFloat(matchingVariant.price_adjustment) || 0;
                     const finalPrice = basePrice + adjustment;
-                    
+
                     // Update price display
                     priceDisplay.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + 'đ';
-                    
+
                     // Update discount badge if original price exists
                     if (originalPrice > 0 && originalPriceDisplay && discountBadge) {
                         const discountPercent = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);

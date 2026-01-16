@@ -20,9 +20,9 @@ class OrderController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('order_code', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                  ->orWhere('customer_phone', 'like', "%{$search}%")
-                  ->orWhere('customer_email', 'like', "%{$search}%");
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_phone', 'like', "%{$search}%")
+                    ->orWhere('customer_email', 'like', "%{$search}%");
             });
         }
 
@@ -74,7 +74,7 @@ class OrderController extends Controller
             $order->update(['payment_status' => 'paid']);
         }
 
-        return back()->with('success', "Đã cập nhật trạng thái đơn hàng từ '{$oldStatus}' thành '{$request->status}'.");
+        return back()->with('success', 'Đã cập nhật trạng thái đơn hàng thành công.');
     }
 
     /**

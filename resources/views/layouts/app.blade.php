@@ -380,7 +380,7 @@
 
     <script>
         // Clear Tudongchat chat history on new session (when user returns to website)
-        (function() {
+        (function () {
             // Check if this is a new browser session
             if (!sessionStorage.getItem('chatSessionActive')) {
                 // New session - clear old chat data
@@ -399,10 +399,9 @@
     @if($chatbotConfig && $chatbotConfig->is_active && $chatbotConfig->script_code)
         {!! $chatbotConfig->script_code !!}
     @else
-        <!-- Tudongchat Default Script -->
         <script src="https://app.tudongchat.com/js/chatbox.js"></script>
         <script>
-            const tudong_chatbox = new TuDongChat('C2JsFTmEQ3RfX5LItuqb6')
+            const tudong_chatbox = new TuDongChat('zWH57ukT6Yjgkmh7x9X1u')
             tudong_chatbox.initial()
         </script>
     @endif

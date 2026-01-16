@@ -31,11 +31,6 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success border-0 shadow-sm mb-4">
-        {{ session('success') }}
-    </div>
-@endif
 
 <div class="row g-4">
     <!-- Order Details -->
