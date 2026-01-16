@@ -34,8 +34,8 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone_number', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%");
             });
         }
 
@@ -60,11 +60,14 @@ class UserController extends Controller
      */
     public function show(User $user): View
     {
-        $user->load(['orders' => function ($query) {
-            $query->orderBy('created_at', 'desc')->take(10);
-        }, 'reviews' => function ($query) {
-            $query->with('product')->orderBy('created_at', 'desc')->take(5);
-        }]);
+        $user->load([
+            'orders' => function ($query) {
+                $query->orderBy('created_at', 'desc')->take(10);
+            },
+            'reviews' => function ($query) {
+                $query->with('product')->orderBy('created_at', 'desc')->take(5);
+            }
+        ]);
 
         return view('admin.users.show', compact('user'));
     }
@@ -158,7 +161,7 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         // Prevent self-delete
-        if ($user->id === auth()->id()) {
+        if ($user->id === \Illuminate\Support\Facades\Auth::guard('admin')->id()) {
             return redirect()->back()
                 ->with('error', 'Không thể xóa tài khoản của chính mình!');
         }
@@ -181,7 +184,7 @@ class UserController extends Controller
     public function toggleStatus(User $user): RedirectResponse
     {
         // Prevent deactivating self
-        if ($user->id === auth()->id()) {
+        if ($user->id === \Illuminate\Support\Facades\Auth::guard('admin')->id()) {
             return redirect()->back()
                 ->with('error', 'Không thể vô hiệu hóa tài khoản của chính mình!');
         }

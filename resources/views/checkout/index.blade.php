@@ -16,7 +16,8 @@
 
             <form action="{{ route('checkout.process') }}" method="POST" id="checkout-form">
                 @csrf
-                
+                <input type="hidden" name="voucher_code" id="applied-voucher-code">
+
                 @auth
                     @if($addresses->count() > 0)
                         <div class="mb-4">
@@ -134,9 +135,22 @@
                     @endforeach
                 </div>
 
+                <div class="mb-4">
+                    <label class="form-label fw-medium">Mã giảm giá</label>
+                    <div class="input-group">
+                        <input type="text" id="voucher-input" class="form-control" placeholder="Nhập mã voucher (SALE10, ...)">
+                        <button class="btn btn-outline-primary" type="button" id="apply-voucher-btn">Áp dụng</button>
+                    </div>
+                    <div id="voucher-message" class="small mt-1"></div>
+                </div>
+
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">Tạm tính</span>
-                    <span class="fw-bold">{{ number_format($total, 0, ',', '.') }}đ</span>
+                    <span class="fw-bold" id="subtotal">{{ number_format($total, 0, ',', '.') }}đ</span>
+                </div>
+                <div id="discount-row" class="d-flex justify-content-between mb-2 d-none">
+                    <span class="text-muted">Giảm giá (<span id="discount-name"></span>)</span>
+                    <span class="text-danger fw-bold" id="discount-amount">-0đ</span>
                 </div>
                 <div class="d-flex justify-content-between mb-4">
                     <span class="text-muted">Giao hàng</span>
@@ -145,7 +159,7 @@
                 <hr>
                 <div class="d-flex justify-content-between my-3">
                     <h5 class="fw-bold">Tổng cộng</h5>
-                    <h4 class="fw-bold text-primary">{{ number_format($total, 0, ',', '.') }}đ</h4>
+                    <h4 class="fw-bold text-primary" id="final-total">{{ number_format($total, 0, ',', '.') }}đ</h4>
                 </div>
             </div>
         </div>
@@ -164,17 +178,83 @@ document.addEventListener('DOMContentLoaded', function() {
     addressRadios.forEach(radio => {
         radio.addEventListener('change', function() {
             if (this.value === 'new') {
-                // Clear fields for new address
                 nameInput.value = '';
                 phoneInput.value = '';
                 addressInput.value = '';
                 nameInput.focus();
             } else {
-                // Auto-fill from selected address
                 nameInput.value = this.dataset.name || '';
                 phoneInput.value = this.dataset.phone || '';
                 addressInput.value = this.dataset.address || '';
             }
+        });
+    });
+
+    // Voucher Handling
+    const voucherInput = document.getElementById('voucher-input');
+    const applyBtn = document.getElementById('apply-voucher-btn');
+    const messageDiv = document.getElementById('voucher-message');
+    const appliedVoucherHidden = document.getElementById('applied-voucher-code');
+    const discountRow = document.getElementById('discount-row');
+    const discountName = document.getElementById('discount-name');
+    const discountAmount = document.getElementById('discount-amount');
+    const finalTotal = document.getElementById('final-total');
+    
+    // Original total for calculation
+    const originalTotal = {{ $total }};
+
+    applyBtn.addEventListener('click', function() {
+        const code = voucherInput.value.trim();
+        if (!code) return;
+
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+        fetch('{{ route('checkout.check-voucher') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                code: code,
+                order_total: originalTotal
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            applyBtn.disabled = false;
+            applyBtn.textContent = 'Áp dụng';
+
+            if (data.success) {
+                messageDiv.className = 'small mt-1 text-success';
+                messageDiv.textContent = data.message;
+                
+                appliedVoucherHidden.value = data.data.code;
+                discountName.textContent = data.data.code;
+                discountAmount.textContent = '-' + data.data.discount_display;
+                discountRow.classList.remove('d-none');
+                finalTotal.textContent = data.data.new_total_display;
+                
+                voucherInput.classList.add('is-valid');
+                voucherInput.classList.remove('is-invalid');
+            } else {
+                messageDiv.className = 'small mt-1 text-danger';
+                messageDiv.textContent = data.message;
+                
+                appliedVoucherHidden.value = '';
+                discountRow.classList.add('d-none');
+                finalTotal.textContent = new Intl.NumberFormat('vi-VN').format(originalTotal) + 'đ';
+                
+                voucherInput.classList.add('is-invalid');
+                voucherInput.classList.remove('is-valid');
+            }
+        })
+        .catch(err => {
+            applyBtn.disabled = false;
+            applyBtn.textContent = 'Áp dụng';
+            alert('Có lỗi xảy ra khi kiểm tra voucher.');
         });
     });
 });

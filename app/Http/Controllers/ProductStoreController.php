@@ -39,6 +39,14 @@ class ProductStoreController extends Controller
             }
         }
 
+        // Price Range Filter
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->price_max);
+        }
+
         // Sorting
         switch ($request->get('sort')) {
             case 'price_asc':
@@ -56,8 +64,9 @@ class ProductStoreController extends Controller
         $products = $query->paginate(12)->withQueryString();
         $categories = Category::whereNull('parent_id')->with('children')->get();
         $brands = Brand::all();
+        $maxPrice = Product::active()->max('price') ?? 5000000;
 
-        return view('products.index', compact('products', 'categories', 'brands'));
+        return view('products.index', compact('products', 'categories', 'brands', 'maxPrice'));
     }
 
     /**

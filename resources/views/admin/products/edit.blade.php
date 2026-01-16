@@ -90,11 +90,19 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="stock_quantity" class="form-label">Số lượng kho <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control @error('stock_quantity') is-invalid @enderror" 
-                                       id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" min="0" required>
-                                @error('stock_quantity')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                @if($product->hasVariants())
+                                    <input type="number" class="form-control bg-light" 
+                                           value="{{ $product->getTotalStock() }}" readonly disabled>
+                                    <input type="hidden" name="stock_quantity" value="{{ $product->stock_quantity }}">
+                                    <small class="text-info">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Tổng kho = {{ $product->getTotalStock() }} (từ {{ $product->variants->count() }} biến thể)
+                                    </small>
+                                @else
+                                    <input type="number" class="form-control" 
+                                           id="stock_quantity" name="stock_quantity" value="{{ $product->stock_quantity }}" readonly>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Số lượng được quản lý qua Phiếu nhập hàng</small>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -155,6 +163,62 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Biến thể sản phẩm (Size & Màu sắc)</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addVariantRow()">
+                            <i class="bi bi-plus-lg me-1"></i>Thêm biến thể
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Thêm các biến thể nếu sản phẩm có nhiều size hoặc màu sắc. Mỗi biến thể có thể có số lượng kho riêng và điều chỉnh giá.
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle" id="variants-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 100px;">Size</th>
+                                        <th style="width: 120px;">Màu sắc</th>
+                                        <th style="width: 80px;">Mã màu</th>
+                                        <th style="width: 100px;">Số lượng</th>
+                                        <th style="width: 120px;">Điều chỉnh giá</th>
+                                        <th style="width: 120px;">SKU riêng</th>
+                                        <th style="width: 60px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="variants-body">
+                                    <!-- Variant rows will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            <strong>Gợi ý Size:</strong> S, M, L, XL, XXL<br>
+                            <strong>Điều chỉnh giá:</strong> Nhập số âm để giảm giá, số dương để tăng giá so với giá gốc.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Delete Variant Confirmation Modal -->
+                <div class="modal fade" id="deleteVariantModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Xác nhận xóa</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Bạn có chắc chắn muốn xóa biến thể này?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-danger" id="confirmDeleteVariantBtn">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">
@@ -203,6 +267,92 @@ function previewImage(input) {
         preview.style.display = 'none';
     }
 }
+
+// Variant management
+let variantIndex = 0;
+
+function addVariantRow(data = {}) {
+    const tbody = document.getElementById('variants-body');
+    const row = document.createElement('tr');
+    const idField = data.id ? `<input type="hidden" name="variants[${variantIndex}][id]" value="${data.id}">` : '';
+    
+    row.innerHTML = `
+        ${idField}
+        <td>
+            <select class="form-select form-select-sm" name="variants[${variantIndex}][size]">
+                <option value="">-- Chọn --</option>
+                <option value="S" ${data.size === 'S' ? 'selected' : ''}>S</option>
+                <option value="M" ${data.size === 'M' ? 'selected' : ''}>M</option>
+                <option value="L" ${data.size === 'L' ? 'selected' : ''}>L</option>
+                <option value="XL" ${data.size === 'XL' ? 'selected' : ''}>XL</option>
+                <option value="XXL" ${data.size === 'XXL' ? 'selected' : ''}>XXL</option>
+            </select>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm" name="variants[${variantIndex}][color]" 
+                   placeholder="VD: Đen, Trắng" value="${data.color || ''}">
+        </td>
+        <td>
+            <input type="color" class="form-control form-control-sm form-control-color" 
+                   name="variants[${variantIndex}][color_code]" value="${data.color_code || '#000000'}" 
+                   style="width: 50px; padding: 2px;">
+        </td>
+        <td>
+            <input type="number" class="form-control form-control-sm" name="variants[${variantIndex}][stock_quantity]" 
+                   value="${data.stock_quantity || 0}" readonly>
+        </td>
+        <td>
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" name="variants[${variantIndex}][price_adjustment]" 
+                       value="${data.price_adjustment || 0}">
+                <span class="input-group-text">đ</span>
+            </div>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm" name="variants[${variantIndex}][sku]" 
+                   placeholder="Tự động" value="${data.sku || ''}">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteVariant(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(row);
+    variantIndex++;
+}
+
+let variantRowToDelete = null;
+const deleteVariantModal = new bootstrap.Modal(document.getElementById('deleteVariantModal'));
+
+function confirmDeleteVariant(btn) {
+    variantRowToDelete = btn.closest('tr');
+    deleteVariantModal.show();
+}
+
+document.getElementById('confirmDeleteVariantBtn').addEventListener('click', function() {
+    if (variantRowToDelete) {
+        variantRowToDelete.remove();
+        variantRowToDelete = null;
+    }
+    deleteVariantModal.hide();
+});
+
+// Load existing variants on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const existingVariants = @json($product->variants ?? []);
+    existingVariants.forEach(variant => {
+        addVariantRow({
+            id: variant.id,
+            size: variant.size,
+            color: variant.color,
+            color_code: variant.color_code,
+            stock_quantity: variant.stock_quantity,
+            price_adjustment: variant.price_adjustment,
+            sku: variant.sku
+        });
+    });
+});
 </script>
 @endpush
 

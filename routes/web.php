@@ -25,23 +25,60 @@ Route::get('/', function () {
         ->active()
         ->featured()
         ->with(['brand'])
-        ->take(4)
+        ->take(10)
         ->get();
-    
+
     $products = Product::query()
         ->active()
         ->inStock()
         ->with(['brand'])
         ->orderBy('created_at', 'desc')
+        ->take(12)
+        ->get();
+
+    $saleProducts = Product::query()
+        ->active()
+        ->whereNotNull('original_price')
+        ->where('original_price', '>', 0)
+        ->with(['brand'])
+        ->orderBy('created_at', 'desc')
         ->take(8)
         ->get();
-    
-    return view('home', compact('featuredProducts', 'products'));
+
+    $categories = \App\Models\Category::active()
+        ->parents()
+        ->orderBy('name')
+        ->get();
+
+    return view('home', compact('featuredProducts', 'products', 'saleProducts', 'categories'));
 })->name('home');
 
 // Products
 Route::get('/san-pham', [ProductStoreController::class, 'index'])->name('products.index');
 Route::get('/san-pham/{slug}', [ProductStoreController::class, 'show'])->name('products.show');
+
+// Sale Products Page
+Route::get('/khuyen-mai', function () {
+    $products = \App\Models\Product::active()
+        ->whereNotNull('original_price')
+        ->where('original_price', '>', 0)
+        ->with(['brand', 'category'])
+        ->orderBy('created_at', 'desc')
+        ->paginate(12);
+
+    $categories = \App\Models\Category::whereNull('parent_id')->with('children')->get();
+    $brands = \App\Models\Brand::all();
+    $maxPrice = \App\Models\Product::active()->max('price') ?? 5000000;
+
+    return view('products.index', [
+        'products' => $products,
+        'categories' => $categories,
+        'brands' => $brands,
+        'maxPrice' => $maxPrice,
+        'pageTitle' => 'Sản phẩm khuyến mãi',
+        'isSalePage' => true,
+    ]);
+})->name('products.sale');
 
 // Product Reviews
 Route::post('/san-pham/{product}/danh-gia', [ReviewController::class, 'store'])->name('reviews.store')->middleware('auth');
@@ -62,15 +99,16 @@ Route::prefix('thanh-toan')->name('checkout.')->group(function () {
     Route::post('/process', [CheckoutController::class, 'process'])->name('process');
     Route::get('/success/{id}', [CheckoutController::class, 'success'])->name('success');
     Route::get('/vnpay-return', [CheckoutController::class, 'vnpayReturn'])->name('vnpay.return');
+    Route::post('/check-voucher', [App\Http\Controllers\VoucherController::class, 'check'])->name('check-voucher');
 });
 
 // Customer Authentication
-Route::middleware('guest')->group(function () {
+Route::middleware('guest:web')->group(function () {
     Route::get('/dang-nhap', [App\Http\Controllers\Auth\CustomerAuthController::class, 'showLoginForm'])->name('login');
     Route::post('/dang-nhap', [App\Http\Controllers\Auth\CustomerAuthController::class, 'login']);
     Route::get('/dang-ky', [App\Http\Controllers\Auth\CustomerAuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/dang-ky', [App\Http\Controllers\Auth\CustomerAuthController::class, 'register']);
-    
+
     // Forgot Password
     Route::get('/quen-mat-khau', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
     Route::post('/quen-mat-khau', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
@@ -105,21 +143,21 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->name('admin.')->group(function () {
-    
+
     // Auth Routes (Guest only)
-    Route::middleware('guest')->group(function () {
+    Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
         Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     });
-    
+
     // Protected Admin Routes
     Route::middleware('admin')->group(function () {
         // Logout
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-        
+
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-        
+
         // Products Management
         Route::prefix('products')->name('products.')->group(function () {
             Route::get('/', [ProductController::class, 'index'])->name('index');
@@ -167,6 +205,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('destroy');
             Route::patch('/{user}/toggle-status', [\App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('toggle-status');
         });
+
+        // Suppliers Management
+        Route::resource('suppliers', \App\Http\Controllers\Admin\SupplierController::class)->except(['create', 'edit']);
+
+        // Stock Imports Management
+        Route::prefix('stock-imports')->name('stock-imports.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\StockImportController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\StockImportController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\StockImportController::class, 'store'])->name('store');
+            Route::get('/{stockImport}', [\App\Http\Controllers\Admin\StockImportController::class, 'show'])->name('show');
+            Route::post('/{stockImport}/confirm', [\App\Http\Controllers\Admin\StockImportController::class, 'confirm'])->name('confirm');
+            Route::post('/{stockImport}/cancel', [\App\Http\Controllers\Admin\StockImportController::class, 'cancel'])->name('cancel');
+            Route::delete('/{stockImport}', [\App\Http\Controllers\Admin\StockImportController::class, 'destroy'])->name('destroy');
+        });
+
+        // Vouchers Management
+        Route::resource('vouchers', \App\Http\Controllers\Admin\VoucherController::class)->except(['create', 'edit']);
     });
 });
 

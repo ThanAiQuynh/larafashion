@@ -32,22 +32,40 @@
                                     <tr data-id="{{ $id }}">
                                         <td class="ps-4">
                                             <div class="d-flex align-items-center gap-3">
-                                                <img src="{{ $details['thumbnail_url'] ?: 'https://placehold.co/60x60?text=No+Image' }}" 
-                                                     alt="{{ $details['name'] }}" class="rounded" style="width: 60px; hieght: 60px; object-fit: cover;">
+                                                <img src="{{ $details['thumbnail_url'] ?: 'https://placehold.co/60x60?text=No+Image' }}"
+                                                    alt="{{ $details['name'] }}" class="rounded"
+                                                    style="width: 60px; hieght: 60px; object-fit: cover;">
                                                 <div>
                                                     <h6 class="mb-0 fw-bold">{{ $details['name'] }}</h6>
+                                                    @if(!empty($details['size']) || !empty($details['color']))
+                                                        <small class="text-muted">
+                                                            @if(!empty($details['size']))
+                                                                Size: {{ $details['size'] }}
+                                                            @endif
+                                                            @if(!empty($details['size']) && !empty($details['color']))
+                                                                |
+                                                            @endif
+                                                            @if(!empty($details['color']))
+                                                                Màu: {{ $details['color'] }}
+                                                            @endif
+                                                        </small>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
                                         <td>{{ number_format($details['price'], 0, ',', '.') }}đ</td>
                                         <td>
                                             <div class="input-group input-group-sm">
-                                                <button class="btn btn-outline-secondary btn-update" type="button" data-action="decrease">-</button>
-                                                <input type="number" class="form-control text-center quantity-input" value="{{ $details['quantity'] }}" min="1">
-                                                <button class="btn btn-outline-secondary btn-update" type="button" data-action="increase">+</button>
+                                                <button class="btn btn-outline-secondary btn-update" type="button"
+                                                    data-action="decrease">-</button>
+                                                <input type="number" class="form-control text-center quantity-input"
+                                                    value="{{ $details['quantity'] }}" min="1">
+                                                <button class="btn btn-outline-secondary btn-update" type="button"
+                                                    data-action="increase">+</button>
                                             </div>
                                         </td>
-                                        <td class="item-total-price fw-bold text-primary">{{ number_format($details['price'] * $details['quantity'], 0, ',', '.') }}đ</td>
+                                        <td class="item-total-price fw-bold text-primary">
+                                            {{ number_format($details['price'] * $details['quantity'], 0, ',', '.') }}đ</td>
                                         <td class="pe-4 text-end text-end">
                                             <button class="btn btn-link text-danger p-0 btn-remove">
                                                 <i class="bi bi-trash fs-5"></i>
@@ -65,7 +83,8 @@
                     </a>
                     <form action="{{ route('cart.clear') }}" method="POST">
                         @csrf
-                        <button type="submit" class="btn btn-outline-danger rounded-pill px-4" onclick="return confirm('Xóa toàn bộ giỏ hàng?')">Xóa giỏ hàng</button>
+                        <button type="submit" class="btn btn-outline-danger rounded-pill px-4"
+                            onclick="return confirm('Xóa toàn bộ giỏ hàng?')">Xóa giỏ hàng</button>
                     </form>
                 </div>
             </div>
@@ -104,97 +123,97 @@
 </div>
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Handle quantity update
-        document.querySelectorAll('.btn-update').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const productId = row.getAttribute('data-id');
-                const input = row.querySelector('.quantity-input');
-                let quantity = parseInt(input.value);
-                const action = this.getAttribute('data-action');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Handle quantity update
+            document.querySelectorAll('.btn-update').forEach(button => {
+                button.addEventListener('click', function () {
+                    const row = this.closest('tr');
+                    const productId = row.getAttribute('data-id');
+                    const input = row.querySelector('.quantity-input');
+                    let quantity = parseInt(input.value);
+                    const action = this.getAttribute('data-action');
 
-                if (action === 'increase') {
-                    quantity++;
-                } else if (action === 'decrease' && quantity > 1) {
-                    quantity--;
-                }
+                    if (action === 'increase') {
+                        quantity++;
+                    } else if (action === 'decrease' && quantity > 1) {
+                        quantity--;
+                    }
 
-                updateCart(productId, quantity, input, row);
+                    updateCart(productId, quantity, input, row);
+                });
             });
-        });
 
-        // Handle quantity direct input
-        document.querySelectorAll('.quantity-input').forEach(input => {
-            input.addEventListener('change', function() {
-                const row = this.closest('tr');
-                const productId = row.getAttribute('data-id');
-                let quantity = parseInt(this.value);
+            // Handle quantity direct input
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', function () {
+                    const row = this.closest('tr');
+                    const productId = row.getAttribute('data-id');
+                    let quantity = parseInt(this.value);
 
-                if (isNaN(quantity) || quantity < 1) {
-                    quantity = 1;
-                    this.value = 1;
-                }
+                    if (isNaN(quantity) || quantity < 1) {
+                        quantity = 1;
+                        this.value = 1;
+                    }
 
-                updateCart(productId, quantity, this, row);
+                    updateCart(productId, quantity, this, row);
+                });
             });
-        });
 
-        // Handle item removal
-        document.querySelectorAll('.btn-remove').forEach(button => {
-            button.addEventListener('click', function() {
-                if (!confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
+            // Handle item removal
+            document.querySelectorAll('.btn-remove').forEach(button => {
+                button.addEventListener('click', function () {
+                    if (!confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
 
-                const row = this.closest('tr');
-                const productId = row.getAttribute('data-id');
+                    const row = this.closest('tr');
+                    const productId = row.getAttribute('data-id');
 
-                fetch('{{ route("cart.remove") }}', {
+                    fetch('{{ route("cart.remove") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ id: productId })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                row.remove();
+                                updateTotals(data.cart_total);
+
+                                if (data.cart_count === 0) {
+                                    location.reload();
+                                }
+                            }
+                        });
+                });
+            });
+
+            function updateCart(id, quantity, input, row) {
+                fetch('{{ route("cart.update") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ id: productId })
+                    body: JSON.stringify({ id: id, quantity: quantity })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        row.remove();
-                        updateTotals(data.cart_total);
-                        
-                        if (data.cart_count === 0) {
-                            location.reload();
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            input.value = quantity;
+                            row.querySelector('.item-total-price').textContent = data.item_total;
+                            updateTotals(data.cart_total);
                         }
-                    }
+                    });
+            }
+
+            function updateTotals(total) {
+                document.querySelectorAll('.cart-total-price').forEach(el => {
+                    el.textContent = total;
                 });
-            });
+            }
         });
-
-        function updateCart(id, quantity, input, row) {
-            fetch('{{ route("cart.update") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ id: id, quantity: quantity })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = quantity;
-                    row.querySelector('.item-total-price').textContent = data.item_total;
-                    updateTotals(data.cart_total);
-                }
-            });
-        }
-
-        function updateTotals(total) {
-            document.querySelectorAll('.cart-total-price').forEach(el => {
-                el.textContent = total;
-            });
-        }
-    });
-</script>
+    </script>
 @endpush

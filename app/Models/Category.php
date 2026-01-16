@@ -13,6 +13,7 @@ class Category extends Model
         'slug',
         'parent_id',
         'is_active',
+        'image_url',
     ];
 
     protected function casts(): array

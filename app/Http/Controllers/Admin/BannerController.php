@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Services\CloudinaryService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -29,9 +30,20 @@ class BannerController extends Controller
     }
 
     /**
+     * Get banner data for editing (AJAX)
+     */
+    public function show(Banner $banner): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'banner' => $banner
+        ]);
+    }
+
+    /**
      * Store new banner
      */
-    public function store(Request $request, CloudinaryService $cloudinary): RedirectResponse
+    public function store(Request $request, CloudinaryService $cloudinary): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -49,13 +61,21 @@ class BannerController extends Controller
         // Upload image to Cloudinary
         $imageUrl = $cloudinary->uploadImage($request->file('image_file'), 'banners');
 
-        Banner::create([
+        $banner = Banner::create([
             'title' => $validated['title'],
             'image_url' => $imageUrl,
             'link_url' => $validated['link_url'],
             'position' => $validated['position'],
             'is_active' => $request->boolean('is_active'),
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã thêm banner thành công!',
+                'banner' => $banner
+            ]);
+        }
 
         return redirect()->route('admin.banners.index')
             ->with('success', 'Đã thêm banner thành công!');
@@ -72,7 +92,7 @@ class BannerController extends Controller
     /**
      * Update banner
      */
-    public function update(Request $request, Banner $banner, CloudinaryService $cloudinary): RedirectResponse
+    public function update(Request $request, Banner $banner, CloudinaryService $cloudinary): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -100,6 +120,14 @@ class BannerController extends Controller
 
         $banner->update($data);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã cập nhật banner thành công!',
+                'banner' => $banner->fresh()
+            ]);
+        }
+
         return redirect()->route('admin.banners.index')
             ->with('success', 'Đã cập nhật banner thành công!');
     }
@@ -107,7 +135,7 @@ class BannerController extends Controller
     /**
      * Delete banner
      */
-    public function destroy(Banner $banner, CloudinaryService $cloudinary): RedirectResponse
+    public function destroy(Request $request, Banner $banner, CloudinaryService $cloudinary): RedirectResponse|JsonResponse
     {
         // Delete image from Cloudinary
         if ($banner->image_url && str_contains($banner->image_url, 'cloudinary')) {
@@ -116,6 +144,13 @@ class BannerController extends Controller
 
         $banner->delete();
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa banner thành công!'
+            ]);
+        }
+
         return redirect()->route('admin.banners.index')
             ->with('success', 'Đã xóa banner thành công!');
     }
@@ -123,12 +158,22 @@ class BannerController extends Controller
     /**
      * Toggle banner status
      */
-    public function toggleStatus(Banner $banner): RedirectResponse
+    public function toggleStatus(Request $request, Banner $banner): RedirectResponse|JsonResponse
     {
         $banner->update(['is_active' => !$banner->is_active]);
 
         $status = $banner->is_active ? 'kích hoạt' : 'vô hiệu hóa';
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Đã {$status} banner!",
+                'is_active' => $banner->is_active
+            ]);
+        }
+
         return redirect()->back()
             ->with('success', "Đã {$status} banner!");
     }
 }
+

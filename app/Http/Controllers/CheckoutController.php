@@ -48,6 +48,7 @@ class CheckoutController extends Controller
             'customer_phone' => 'required|string|max:20',
             'shipping_address' => 'required|string',
             'payment_method' => 'required|in:cod,vnpay',
+            'voucher_code' => 'nullable|string|exists:vouchers,code',
         ], [
             'customer_name.required' => 'Vui lòng nhập họ tên.',
             'customer_email.required' => 'Vui lòng nhập email.',
@@ -64,10 +65,22 @@ class CheckoutController extends Controller
         try {
             DB::beginTransaction();
 
-            $total = 0;
+            $subtotal = 0;
             foreach ($cart as $item) {
-                $total += $item['price'] * $item['quantity'];
+                $subtotal += $item['price'] * $item['quantity'];
             }
+
+            // Handle Voucher
+            $voucher = null;
+            $discountAmount = 0;
+            if ($request->voucher_code) {
+                $voucher = \App\Models\Voucher::where('code', strtoupper($request->voucher_code))->first();
+                if ($voucher && $voucher->isValid() && $voucher->canBeUsedBy(auth()->id())) {
+                    $discountAmount = $voucher->calculateDiscount($subtotal);
+                }
+            }
+
+            $total = max(0, $subtotal - $discountAmount);
 
             // Create Order
             $order = Order::create([
@@ -77,6 +90,8 @@ class CheckoutController extends Controller
                 'customer_email' => $request->customer_email,
                 'customer_phone' => $request->customer_phone,
                 'total_amount' => $total,
+                'voucher_id' => $voucher ? $voucher->id : null,
+                'discount_amount' => $discountAmount,
                 'shipping_address' => [
                     'address' => $request->shipping_address,
                 ],
@@ -86,23 +101,47 @@ class CheckoutController extends Controller
             ]);
 
             // Create OrderItems and Deduct Stock
-            foreach ($cart as $id => $item) {
-                $product = Product::findOrFail($id);
-                
-                if ($product->stock_quantity < $item['quantity']) {
-                    throw new \Exception("Sản phẩm {$product->name} không đủ hàng.");
+            foreach ($cart as $key => $item) {
+                $product = Product::findOrFail($item['id']);
+                $variant = null;
+
+                if (isset($item['size']) || isset($item['color'])) {
+                    $variant = \App\Models\ProductVariant::where('product_id', $item['id'])
+                        ->where('size', $item['size'] ?? null)
+                        ->where('color', $item['color'] ?? null)
+                        ->first();
+
+                    if ($variant) {
+                        if ($variant->stock_quantity < $item['quantity']) {
+                            throw new \Exception("Sản phẩm {$product->name} biến thể đang chọn không đủ hàng.");
+                        }
+                        $variant->decrement('stock_quantity', $item['quantity']);
+                    } else {
+                        throw new \Exception("Không tìm thấy biến thể của sản phẩm {$product->name}.");
+                    }
+                } else {
+                    if ($product->stock_quantity < $item['quantity']) {
+                        throw new \Exception("Sản phẩm {$product->name} không đủ hàng.");
+                    }
+                    $product->decrement('stock_quantity', $item['quantity']);
                 }
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
+                    'variant_id' => $variant ? $variant->id : null,
                     'product_name' => $product->name,
+                    'size' => $item['size'] ?? null,
+                    'color' => $item['color'] ?? null,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
                     'total_price' => $item['price'] * $item['quantity'],
                 ]);
+            }
 
-                $product->decrement('stock_quantity', $item['quantity']);
+            // Record Voucher Usage
+            if ($voucher && $discountAmount > 0) {
+                $voucher->recordUsage($order->id, $discountAmount, auth()->id());
             }
 
             DB::commit();
@@ -153,12 +192,12 @@ class CheckoutController extends Controller
             // Payment failed
             $responseCode = $request->input('vnp_ResponseCode');
             $message = $vnpay->getResponseMessage($responseCode);
-            
+
             $order->update([
                 'payment_status' => 'failed',
                 'notes' => 'VNPay Error: ' . $message,
             ]);
-            
+
             return redirect()->route('checkout.success', $order->id)
                 ->with('error', 'Thanh toán thất bại: ' . $message);
         }

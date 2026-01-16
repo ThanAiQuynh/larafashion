@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +20,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Share parent categories with children to all views using the app layout
+        View::composer('layouts.app', function ($view) {
+            $navCategories = \App\Models\Category::active()
+                ->parents()
+                ->with(['children' => fn($q) => $q->active()->orderBy('name')])
+                ->orderBy('name')
+                ->get();
+            $view->with('navCategories', $navCategories);
+        });
     }
 }

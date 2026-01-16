@@ -96,8 +96,14 @@
                         <tfoot class="border-top">
                             <tr>
                                 <td colspan="3" class="text-end fw-medium">Tạm tính:</td>
-                                <td class="text-end pe-4 fw-bold">{{ number_format($order->total_amount, 0, ',', '.') }}đ</td>
+                                <td class="text-end pe-4 fw-bold">{{ number_format($order->items->sum('total_price'), 0, ',', '.') }}đ</td>
                             </tr>
+                            @if($order->discount_amount > 0)
+                            <tr>
+                                <td colspan="3" class="text-end fw-medium text-danger">Giảm giá:</td>
+                                <td class="text-end pe-4 fw-bold text-danger">-{{ number_format($order->discount_amount, 0, ',', '.') }}đ</td>
+                            </tr>
+                            @endif
                             <tr>
                                 <td colspan="3" class="text-end fw-medium">Phí vận chuyển:</td>
                                 <td class="text-end pe-4">{{ number_format($order->shipping_fee ?? 0, 0, ',', '.') }}đ</td>

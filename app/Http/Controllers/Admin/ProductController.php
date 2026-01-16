@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Services\CloudinaryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class ProductController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%");
             });
         }
 
@@ -84,12 +85,19 @@ class ProductController extends Controller
             'brand_id' => 'nullable|exists:brands,id',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
             'thumbnail_url' => 'nullable|url',
             'thumbnail_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
+            // Variants validation
+            'variants' => 'nullable|array',
+            'variants.*.size' => 'nullable|string|max:20',
+            'variants.*.color' => 'nullable|string|max:50',
+            'variants.*.color_code' => 'nullable|string|max:10',
+            'variants.*.price_adjustment' => 'nullable|numeric',
+            'variants.*.sku' => 'nullable|string|max:100',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -101,8 +109,30 @@ class ProductController extends Controller
             $validated['thumbnail_url'] = $cloudinary->uploadImage($request->file('thumbnail_file'), 'products');
         }
 
-        unset($validated['thumbnail_file']);
-        Product::create($validated);
+        // Extract variants before creating product
+        $variants = $validated['variants'] ?? [];
+        unset($validated['thumbnail_file'], $validated['variants'], $validated['stock_quantity']);
+        $validated['stock_quantity'] = 0; // Force 0 on creation
+
+        $product = Product::create($validated);
+
+        // Create variants
+        foreach ($variants as $variantData) {
+            // Skip empty variants
+            if (empty($variantData['size']) && empty($variantData['color'])) {
+                continue;
+            }
+
+            $product->variants()->create([
+                'size' => $variantData['size'] ?? null,
+                'color' => $variantData['color'] ?? null,
+                'color_code' => $variantData['color_code'] ?? null,
+                'stock_quantity' => 0, // Force 0 on creation
+                'price_adjustment' => $variantData['price_adjustment'] ?? 0,
+                'sku' => $variantData['sku'] ?: $product->sku . '-' . Str::random(4),
+                'is_active' => true,
+            ]);
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Đã thêm sản phẩm thành công!');
@@ -115,6 +145,7 @@ class ProductController extends Controller
     {
         $categories = Category::whereNull('parent_id')->with('children')->get();
         $brands = Brand::all();
+        $product->load('variants');
 
         return view('admin.products.edit', compact('product', 'categories', 'brands'));
     }
@@ -131,12 +162,20 @@ class ProductController extends Controller
             'brand_id' => 'nullable|exists:brands,id',
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
             'thumbnail_url' => 'nullable|url',
             'thumbnail_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
+            // Variants validation
+            'variants' => 'nullable|array',
+            'variants.*.id' => 'nullable|integer',
+            'variants.*.size' => 'nullable|string|max:20',
+            'variants.*.color' => 'nullable|string|max:50',
+            'variants.*.color_code' => 'nullable|string|max:10',
+            'variants.*.price_adjustment' => 'nullable|numeric',
+            'variants.*.sku' => 'nullable|string|max:100',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -153,8 +192,45 @@ class ProductController extends Controller
             $validated['thumbnail_url'] = $cloudinary->uploadImage($request->file('thumbnail_file'), 'products');
         }
 
-        unset($validated['thumbnail_file']);
+        // Extract variants before updating product
+        $variants = $validated['variants'] ?? [];
+        unset($validated['thumbnail_file'], $validated['variants'], $validated['stock_quantity']);
+
         $product->update($validated);
+
+        // Sync variants - collect IDs to keep
+        $keepIds = [];
+        foreach ($variants as $variantData) {
+            // Skip empty variants
+            if (empty($variantData['size']) && empty($variantData['color'])) {
+                continue;
+            }
+
+            $variantFields = [
+                'size' => $variantData['size'] ?? null,
+                'color' => $variantData['color'] ?? null,
+                'color_code' => $variantData['color_code'] ?? null,
+                'price_adjustment' => $variantData['price_adjustment'] ?? 0,
+                'sku' => $variantData['sku'] ?: $product->sku . '-' . Str::random(4),
+                'is_active' => true,
+            ];
+
+            if (!empty($variantData['id'])) {
+                // Update existing variant
+                $variant = $product->variants()->find($variantData['id']);
+                if ($variant) {
+                    $variant->update($variantFields);
+                    $keepIds[] = $variant->id;
+                }
+            } else {
+                // Create new variant
+                $newVariant = $product->variants()->create($variantFields);
+                $keepIds[] = $newVariant->id;
+            }
+        }
+
+        // Delete variants not in the keep list
+        $product->variants()->whereNotIn('id', $keepIds)->delete();
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Đã cập nhật sản phẩm thành công!');

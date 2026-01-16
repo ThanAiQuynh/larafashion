@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Services\CloudinaryService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,9 +31,20 @@ class BrandController extends Controller
     }
 
     /**
+     * Get brand data for editing (AJAX)
+     */
+    public function show(Brand $brand): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'brand' => $brand
+        ]);
+    }
+
+    /**
      * Store new brand
      */
-    public function store(Request $request, CloudinaryService $cloudinary): RedirectResponse
+    public function store(Request $request, CloudinaryService $cloudinary): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:brands,name',
@@ -46,12 +58,26 @@ class BrandController extends Controller
             try {
                 $validated['logo_url'] = $cloudinary->uploadImage($request->file('logo'), 'brands');
             } catch (\Exception $e) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Không thể upload logo: ' . $e->getMessage()
+                    ], 422);
+                }
                 return back()->withInput()->with('error', 'Không thể upload logo: ' . $e->getMessage());
             }
         }
 
         unset($validated['logo']);
-        Brand::create($validated);
+        $brand = Brand::create($validated);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã thêm thương hiệu thành công!',
+                'brand' => $brand
+            ]);
+        }
 
         return redirect()->route('admin.brands.index')
             ->with('success', 'Đã thêm thương hiệu thành công!');
@@ -68,7 +94,7 @@ class BrandController extends Controller
     /**
      * Update brand
      */
-    public function update(Request $request, Brand $brand, CloudinaryService $cloudinary): RedirectResponse
+    public function update(Request $request, Brand $brand, CloudinaryService $cloudinary): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:brands,name,' . $brand->id,
@@ -86,12 +112,26 @@ class BrandController extends Controller
                 }
                 $validated['logo_url'] = $cloudinary->uploadImage($request->file('logo'), 'brands');
             } catch (\Exception $e) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Không thể upload logo: ' . $e->getMessage()
+                    ], 422);
+                }
                 return back()->withInput()->with('error', 'Không thể upload logo: ' . $e->getMessage());
             }
         }
 
         unset($validated['logo']);
         $brand->update($validated);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã cập nhật thương hiệu thành công!',
+                'brand' => $brand->fresh()
+            ]);
+        }
 
         return redirect()->route('admin.brands.index')
             ->with('success', 'Đã cập nhật thương hiệu thành công!');
@@ -100,9 +140,15 @@ class BrandController extends Controller
     /**
      * Delete brand
      */
-    public function destroy(Brand $brand, CloudinaryService $cloudinary): RedirectResponse
+    public function destroy(Request $request, Brand $brand, CloudinaryService $cloudinary): RedirectResponse|JsonResponse
     {
         if ($brand->products()->count() > 0) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể xóa thương hiệu này vì nó có sản phẩm liên kết.'
+                ], 422);
+            }
             return back()->with('error', 'Không thể xóa thương hiệu này vì nó có sản phẩm liên kết.');
         }
 
@@ -113,9 +159,14 @@ class BrandController extends Controller
 
         $brand->delete();
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa thương hiệu thành công!'
+            ]);
+        }
+
         return redirect()->route('admin.brands.index')
             ->with('success', 'Đã xóa thương hiệu thành công!');
     }
 }
-
-

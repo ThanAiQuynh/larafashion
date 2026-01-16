@@ -56,6 +56,59 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * Get available sizes for this product
+     */
+    public function getAvailableSizes(): array
+    {
+        return $this->variants()
+            ->whereNotNull('size')
+            ->where('is_active', true)
+            ->where('stock_quantity', '>', 0)
+            ->distinct()
+            ->pluck('size')
+            ->toArray();
+    }
+
+    /**
+     * Get available colors for this product
+     */
+    public function getAvailableColors(): array
+    {
+        return $this->variants()
+            ->whereNotNull('color')
+            ->where('is_active', true)
+            ->where('stock_quantity', '>', 0)
+            ->select('color', 'color_code')
+            ->distinct()
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Check if product has variants
+     */
+    public function hasVariants(): bool
+    {
+        return $this->variants()->count() > 0;
+    }
+
+    /**
+     * Get total stock from all variants or base stock
+     */
+    public function getTotalStock(): int
+    {
+        if ($this->hasVariants()) {
+            return (int) $this->variants()->where('is_active', true)->sum('stock_quantity');
+        }
+        return $this->stock_quantity;
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -74,7 +127,13 @@ class Product extends Model
 
     public function scopeInStock($query)
     {
-        return $query->where('stock_quantity', '>', 0);
+        return $query->where(function ($q) {
+            $q->where('stock_quantity', '>', 0)
+                ->orWhereHas('variants', function ($v) {
+                    $v->where('is_active', true)
+                        ->where('stock_quantity', '>', 0);
+                });
+        });
     }
 
     // Helpers
