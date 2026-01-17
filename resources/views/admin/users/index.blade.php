@@ -187,7 +187,18 @@
         </div>
     </div>
 
-    <div class="mt-4">
+    <div class="mt-4 d-flex justify-content-center">
         {{ $users->links() }}
     </div>
+
+    <style>
+        /* Hide pagination summary text */
+        nav div.d-none.flex-sm-fill.d-sm-flex > div:first-child {
+            display: none !important;
+        }
+        
+        nav .justify-content-sm-between {
+            justify-content: center !important;
+        }
+    </style>
 @endsection

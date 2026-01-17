@@ -16,7 +16,7 @@ class VoucherController extends Controller
      */
     public function index(): View
     {
-        $vouchers = Voucher::withCount('usages')->latest()->get();
+        $vouchers = Voucher::withCount('usages')->latest()->paginate(10);
         return view('admin.vouchers.index', compact('vouchers'));
     }
 

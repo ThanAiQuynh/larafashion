@@ -102,8 +102,6 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="fw-bold mb-0">Sản phẩm</h2>
-                        <p class="text-muted mb-0">Hiển thị {{ $products->count() }} trong tổng số {{ $products->total() }}
-                            sản phẩm</p>
                     </div>
                     <div class="d-flex gap-2">
                         <select class="form-select border-0 shadow-sm" style="width: auto;"
@@ -151,10 +149,10 @@
                                     </h6>
                                     <div class="d-flex align-items-center gap-2">
                                         <span
-                                            class="text-primary fw-bold">{{ number_format($product->price, 0, ',', '.') }}đ</span>
+                                            class="text-primary fw-bold">{{ number_format((float) $product->price, 0, ',', '.') }}đ</span>
                                         @if($product->original_price)
                                             <span
-                                                class="text-muted text-decoration-line-through small">{{ number_format($product->original_price, 0, ',', '.') }}đ</span>
+                                                class="text-muted text-decoration-line-through small">{{ number_format((float) $product->original_price, 0, ',', '.') }}đ</span>
                                         @endif
                                     </div>
                                 </div>
@@ -220,9 +218,17 @@
             cursor: pointer;
         }
 
-        #price-slider .noUi-handle:before,
         #price-slider .noUi-handle:after {
             display: none;
+        }
+
+        /* Hide pagination summary text */
+        nav div.d-none.flex-sm-fill.d-sm-flex>div:first-child {
+            display: none !important;
+        }
+
+        nav .justify-content-sm-between {
+            justify-content: center !important;
         }
     </style>
 @endsection

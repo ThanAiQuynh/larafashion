@@ -58,7 +58,21 @@
                 </table>
             </div>
         </div>
+        <div class="card-footer d-flex justify-content-center border-top-0 bg-transparent py-3">
+            {{ $brands->links() }}
+        </div>
     </div>
+
+    <style>
+        /* Hide pagination summary text */
+        nav div.d-none.flex-sm-fill.d-sm-flex>div:first-child {
+            display: none !important;
+        }
+
+        nav .justify-content-sm-between {
+            justify-content: center !important;
+        }
+    </style>
 
     <!-- Brand Modal (Create/Edit) -->
     <div class="modal fade" id="brandModal" tabindex="-1" aria-labelledby="brandModalLabel" aria-hidden="true">

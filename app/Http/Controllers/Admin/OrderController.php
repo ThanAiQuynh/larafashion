@@ -41,7 +41,7 @@ class OrderController extends Controller
         $sortDir = $request->get('dir', 'desc');
         $query->orderBy($sortBy, $sortDir);
 
-        $orders = $query->paginate(15)->withQueryString();
+        $orders = $query->paginate(10)->withQueryString();
 
         return view('admin.orders.index', compact('orders'));
     }

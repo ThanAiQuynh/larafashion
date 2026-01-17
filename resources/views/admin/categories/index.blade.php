@@ -37,7 +37,7 @@
                                 </td>
                                 <td><code>{{ $category->slug }}</code></td>
                                 <td>{{ $category->parent ? $category->parent->name : '-' }}</td>
-                                <td>{{ $category->products_count }}</td>
+                                <td>{{ $category->total_products_count }}</td>
                                 <td>
                                     @if($category->is_active)
                                         <span class="badge bg-success">Hoạt động</span>

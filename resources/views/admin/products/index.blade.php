@@ -104,10 +104,11 @@
                                         <small class="text-muted">{{ $product->brand?->name }}</small>
                                     </td>
                                     <td>
-                                        <div class="fw-medium text-primary">{{ number_format($product->price, 0, ',', '.') }}đ</div>
+                                        <div class="fw-medium text-primary">
+                                            {{ number_format((float) $product->price, 0, ',', '.') }}đ</div>
                                         @if($product->original_price)
                                             <small class="text-muted text-decoration-line-through">
-                                                {{ number_format($product->original_price, 0, ',', '.') }}đ
+                                                {{ number_format((float) $product->original_price, 0, ',', '.') }}đ
                                             </small>
                                         @endif
                                     </td>
@@ -154,7 +155,7 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="card-footer">
+                <div class="card-footer d-flex justify-content-center border-top-0 bg-transparent py-3">
                     {{ $products->links() }}
                 </div>
             @else
@@ -168,6 +169,17 @@
             @endif
         </div>
     </div>
+
+    <style>
+        /* Hide pagination summary text */
+        nav div.d-none.flex-sm-fill.d-sm-flex>div:first-child {
+            display: none !important;
+        }
+
+        nav .justify-content-sm-between {
+            justify-content: center !important;
+        }
+    </style>
 
     <!-- Delete Product Confirmation Modal -->
     <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-hidden="true">

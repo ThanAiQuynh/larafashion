@@ -16,7 +16,7 @@ class SupplierController extends Controller
      */
     public function index(): View
     {
-        $suppliers = Supplier::withCount('stockImports')->latest()->get();
+        $suppliers = Supplier::withCount('stockImports')->latest()->paginate(10);
         return view('admin.suppliers.index', compact('suppliers'));
     }
 

@@ -80,8 +80,22 @@
                     </button>
                 </div>
             @endif
+            <div class="card-footer d-flex justify-content-center border-top-0 bg-transparent py-3">
+                {{ $suppliers->links() }}
+            </div>
         </div>
     </div>
+
+    <style>
+        /* Hide pagination summary text */
+        nav div.d-none.flex-sm-fill.d-sm-flex>div:first-child {
+            display: none !important;
+        }
+
+        nav .justify-content-sm-between {
+            justify-content: center !important;
+        }
+    </style>
 
     <!-- Supplier Modal -->
     <div class="modal fade" id="supplierModal" tabindex="-1" aria-hidden="true">

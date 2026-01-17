@@ -16,7 +16,9 @@
                             <div class="col-md-8">
                                 <label for="name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" name="name" value="{{ old('name') }}" required>
+                                       id="name" name="name" value="{{ old('name') }}" required
+                                       oninvalid="this.setCustomValidity('Vui lòng nhập tên sản phẩm.')"
+                                       oninput="this.setCustomValidity('')">
                                 @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -24,7 +26,9 @@
                             <div class="col-md-4">
                                 <label for="sku" class="form-label">Mã SKU <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('sku') is-invalid @enderror" 
-                                       id="sku" name="sku" value="{{ old('sku') }}" required>
+                                       id="sku" name="sku" value="{{ old('sku') }}" required
+                                       oninvalid="this.setCustomValidity('Vui lòng nhập mã SKU.')"
+                                       oninput="this.setCustomValidity('')">
                                 @error('sku')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -72,7 +76,9 @@
                                 <label for="price" class="form-label">Giá bán <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="number" class="form-control @error('price') is-invalid @enderror" 
-                                           id="price" name="price" value="{{ old('price') }}" min="0" required>
+                                           id="price" name="price" value="{{ old('price') }}" min="0" required
+                                           oninvalid="this.setCustomValidity('Vui lòng nhập giá bán.')"
+                                           oninput="this.setCustomValidity('')">
                                     <span class="input-group-text">đ</span>
                                 </div>
                                 @error('price')

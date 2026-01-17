@@ -182,6 +182,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\BannerController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\BannerController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Admin\BannerController::class, 'store'])->name('store');
+            Route::get('/{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'show'])->name('show');
             Route::get('/{banner}/edit', [\App\Http\Controllers\Admin\BannerController::class, 'edit'])->name('edit');
             Route::put('/{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'update'])->name('update');
             Route::delete('/{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy'])->name('destroy');

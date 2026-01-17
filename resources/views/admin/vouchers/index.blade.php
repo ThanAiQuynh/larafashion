@@ -41,20 +41,27 @@
                                     <td class="text-center">
                                         {{ $voucher->usage_count }}/{{ $voucher->usage_limit ?? '∞' }}
                                     </td>
-                                    <td>
+                                    <td class="time-cell"
+                                        data-start="{{ $voucher->start_date->format('Y-m-d\TH:i:s') }}"
+                                        data-end="{{ $voucher->end_date->format('Y-m-d\TH:i:s') }}">
                                         <small>
-                                            {{ $voucher->start_date->format('d/m/Y') }} - {{ $voucher->end_date->format('d/m/Y') }}
+                                            {{ $voucher->start_date->format('d/m/Y H:i') }} - {{ $voucher->end_date->format('d/m/Y H:i') }}
                                         </small>
-                                        @if(now() > $voucher->end_date)
-                                            <br><span class="badge bg-secondary">Hết hạn</span>
-                                        @elseif(now() < $voucher->start_date)
-                                            <br><span class="badge bg-info">Chưa bắt đầu</span>
-                                        @endif
+                                        <span class="time-badge"></span>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="badge {{ $voucher->is_active && $voucher->isValid() ? 'bg-success' : 'bg-secondary' }}">
-                                            {{ $voucher->is_active ? 'Hoạt động' : 'Ngừng' }}
-                                        </span>
+                                    <td class="text-center status-cell" 
+                                        data-start="{{ $voucher->start_date->format('Y-m-d\TH:i:s') }}"
+                                        data-end="{{ $voucher->end_date->format('Y-m-d\TH:i:s') }}"
+                                        data-active="{{ $voucher->is_active ? '1' : '0' }}">
+                                        @if(now() > $voucher->end_date)
+                                            <span class="badge bg-secondary">Hết hạn</span>
+                                        @elseif(now() < $voucher->start_date)
+                                            <span class="badge bg-info">Chưa bắt đầu</span>
+                                        @elseif(!$voucher->is_active)
+                                            <span class="badge bg-warning text-dark">Ngừng</span>
+                                        @else
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        @endif
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex gap-2 justify-content-center">
@@ -83,7 +90,21 @@
                 </div>
             @endif
         </div>
+        <div class="card-footer d-flex justify-content-center border-top-0 bg-transparent py-3">
+            {{ $vouchers->links() }}
+        </div>
     </div>
+
+    <style>
+        /* Hide pagination summary text */
+        nav div.d-none.flex-sm-fill.d-sm-flex > div:first-child {
+            display: none !important;
+        }
+        
+        nav .justify-content-sm-between {
+            justify-content: center !important;
+        }
+    </style>
 
     <!-- Voucher Modal -->
     <div class="modal fade" id="voucherModal" tabindex="-1" aria-hidden="true">
@@ -189,13 +210,35 @@
             </div>
         </div>
     </div>
+
+    <!-- Success Notification Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <i class="bi bi-check-circle-fill text-success display-4 mb-3"></i>
+                    <h5 class="mb-2">Thành công!</h5>
+                    <p class="text-muted mb-0" id="successMessage">Thao tác đã hoàn thành.</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0">
+                    <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
 <script>
 const voucherModal = new bootstrap.Modal(document.getElementById('voucherModal'));
 const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+const successModal = new bootstrap.Modal(document.getElementById('successModal'));
 let deleteId = null;
+
+function showSuccess(message) {
+    document.getElementById('successMessage').textContent = message;
+    successModal.show();
+}
 
 function toggleMaxDiscount() {
     const type = document.getElementById('type').value;
@@ -267,9 +310,9 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function()
         deleteModal.hide();
         if (data.success) {
             document.querySelector(`tr[data-id="${deleteId}"]`).remove();
-            alert(data.message);
+            showSuccess(data.message);
         } else {
-            alert(data.message);
+            showSuccess(data.message);
         }
     });
 });
@@ -317,17 +360,77 @@ document.getElementById('voucherForm').addEventListener('submit', function(e) {
         
         if (data.success) {
             voucherModal.hide();
-            alert(data.message);
-            location.reload();
+            showSuccess(data.message);
+            setTimeout(() => location.reload(), 1500);
         } else {
-            alert(data.message || 'Có lỗi xảy ra');
+            showSuccess(data.message || 'Có lỗi xảy ra');
         }
     })
     .catch(err => {
         saveBtn.disabled = false;
         spinner.classList.add('d-none');
-        alert('Có lỗi xảy ra');
+        showSuccess('Có lỗi xảy ra');
     });
 });
+
+// Real-time voucher status update
+function updateVoucherStatuses() {
+    const now = new Date();
+    
+    // Update status column
+    document.querySelectorAll('.status-cell').forEach(cell => {
+        const startDate = new Date(cell.dataset.start);
+        const endDate = new Date(cell.dataset.end);
+        const isActive = cell.dataset.active === '1';
+        
+        let badge = '';
+        if (now > endDate) {
+            badge = '<span class="badge bg-secondary">Hết hạn</span>';
+        } else if (now < startDate) {
+            badge = '<span class="badge bg-info">Chưa bắt đầu</span>';
+        } else if (!isActive) {
+            badge = '<span class="badge bg-warning text-dark">Ngừng</span>';
+        } else {
+            badge = '<span class="badge bg-success">Hoạt động</span>';
+        }
+        
+        cell.innerHTML = badge;
+    });
+    
+    // Update time column badges
+    document.querySelectorAll('.time-cell').forEach(cell => {
+        const startDate = new Date(cell.dataset.start);
+        const endDate = new Date(cell.dataset.end);
+        const badgeSpan = cell.querySelector('.time-badge');
+        
+        if (!badgeSpan) return;
+        
+        let badge = '';
+        if (now > endDate) {
+            badge = '<br><span class="badge bg-secondary">Đã hết hạn</span>';
+        } else if (now < startDate) {
+            const diff = startDate - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            if (hours < 24) {
+                badge = `<br><span class="badge bg-info">Còn ${hours}h ${mins}m</span>`;
+            }
+        } else {
+            const diff = endDate - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            if (hours < 24) {
+                badge = `<br><span class="badge bg-warning text-dark">Hết hạn sau ${hours}h ${mins}m</span>`;
+            }
+        }
+        
+        badgeSpan.innerHTML = badge;
+    });
+}
+
+// Update every second
+setInterval(updateVoucherStatuses, 1000);
+// Initial update
+updateVoucherStatuses();
 </script>
 @endpush

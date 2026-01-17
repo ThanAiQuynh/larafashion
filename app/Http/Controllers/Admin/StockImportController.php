@@ -25,7 +25,7 @@ class StockImportController extends Controller
         $stockImports = StockImport::with(['supplier', 'creator'])
             ->withCount('items')
             ->latest()
-            ->paginate(20);
+            ->paginate(10);
 
         return view('admin.stock-imports.index', compact('stockImports'));
     }

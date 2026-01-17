@@ -26,11 +26,16 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required|min:6',
+        ], [
+            'email.required' => 'Vui lòng nhập địa chỉ email.',
+            'email.email' => 'Địa chỉ email không hợp lệ.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
         ]);
 
         if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::guard('admin')->user();
-            
+
             // Check if user is admin
             if ($user->role !== 'admin') {
                 Auth::guard('admin')->logout();
@@ -48,7 +53,7 @@ class AuthController extends Controller
             }
 
             $request->session()->regenerate();
-            
+
             return redirect()->intended(route('admin.dashboard'));
         }
 

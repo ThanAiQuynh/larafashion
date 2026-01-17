@@ -17,7 +17,7 @@ class CategoryController extends Controller
      */
     public function index(): View
     {
-        $categories = Category::with('parent')->withCount('products')->get();
+        $categories = Category::with(['parent', 'children.products', 'products'])->get();
         $parentCategories = Category::whereNull('parent_id')->get();
         return view('admin.categories.index', compact('categories', 'parentCategories'));
     }

@@ -55,7 +55,7 @@ class ProductController extends Controller
         $sortDir = $request->get('dir', 'desc');
         $query->orderBy($sortBy, $sortDir);
 
-        $products = $query->paginate(15)->withQueryString();
+        $products = $query->paginate(10)->withQueryString();
         $categories = Category::whereNull('parent_id')->with('children')->get();
         $brands = Brand::all();
 
@@ -98,6 +98,25 @@ class ProductController extends Controller
             'variants.*.color_code' => 'nullable|string|max:10',
             'variants.*.price_adjustment' => 'nullable|numeric',
             'variants.*.sku' => 'nullable|string|max:100',
+        ], [
+            'name.required' => 'Vui lòng nhập tên sản phẩm.',
+            'name.max' => 'Tên sản phẩm không được vượt quá 255 ký tự.',
+            'sku.required' => 'Vui lòng nhập mã SKU.',
+            'sku.unique' => 'Mã SKU này đã tồn tại.',
+            'sku.max' => 'Mã SKU không được vượt quá 50 ký tự.',
+            'category_id.exists' => 'Danh mục không hợp lệ.',
+            'brand_id.exists' => 'Thương hiệu không hợp lệ.',
+            'price.required' => 'Vui lòng nhập giá bán.',
+            'price.numeric' => 'Giá bán phải là số.',
+            'price.min' => 'Giá bán không được âm.',
+            'original_price.numeric' => 'Giá gốc phải là số.',
+            'original_price.min' => 'Giá gốc không được âm.',
+            'stock_quantity.integer' => 'Số lượng tồn kho phải là số nguyên.',
+            'stock_quantity.min' => 'Số lượng tồn kho không được âm.',
+            'thumbnail_url.url' => 'URL hình ảnh không hợp lệ.',
+            'thumbnail_file.image' => 'File phải là hình ảnh.',
+            'thumbnail_file.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif, webp.',
+            'thumbnail_file.max' => 'Hình ảnh không được vượt quá 2MB.',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);

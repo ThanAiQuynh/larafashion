@@ -42,7 +42,7 @@ class UserController extends Controller
         // Sorting
         $query->orderBy('created_at', 'desc');
 
-        $users = $query->paginate(15)->withQueryString();
+        $users = $query->paginate(10)->withQueryString();
 
         // Stats
         $stats = [
